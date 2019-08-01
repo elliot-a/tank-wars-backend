@@ -3,22 +3,33 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var port = process.env.PORT || 3000;
 
-var player = 1;
+const connectedPlayers = [false,false];
+
 
 io.on('connection', function(socket){
 
-  console.log(player);
+  let playerNumber = 0;
 
   socket.on('player added', function(msg){
 
-    console.log('player'+player);
-    socket.emit('playerNumber', player);
-    if(player === 1){
-      player = 2;
-    }else{
-      io.emit('playersReady');
-      player = 1;
+    console.log('player added');
+
+    console.log(connectedPlayers);
+
+    if(!connectedPlayers[0]){
+      connectedPlayers[0] = true;
+      socket.emit('playerNumber', 1);
+      playerNumber = 0;
+    }else if(!connectedPlayers[1]){
+      connectedPlayers[1] = true;
+      socket.emit('playerNumber', 2);
+      playerNumber = 1;
     }
+
+    if(connectedPlayers[0] && connectedPlayers[1]){
+      io.emit('playersReady');
+    }
+
   });
 
   socket.on('chat message', function(msg){
@@ -31,6 +42,7 @@ io.on('connection', function(socket){
 
   socket.on('disconnect', function(){
     console.log('user disconnected');
+    connectedPlayers[playerNumber] = false;
   });
 
 });
